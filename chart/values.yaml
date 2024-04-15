@@ -1,0 +1,88 @@
+deployment:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    maxSurge: 1
+    maxUnavailable: 0
+  containers:
+    - name: qbit
+      image:
+        repository: lscr.io/linuxserver/qbittorrent
+        tag: latest
+      ports:
+        - name: http
+          containerPort: 80
+        - name: tcp
+          containerPort: 6881
+          protocol: TCP
+        - name: udp
+          containerPort: 6881
+          protocol: UDP
+      env:
+        - name: WEBUI_PORT
+          value: "80"
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+      resources:
+        requests:
+          cpu: 0m
+          memory: 0Mi
+        limits:
+          cpu: 2000m
+          memory: 2000Mi
+      volumeMounts:
+        - name: storage
+          mountPath: /config
+          subPath: qbittorrent/config
+        - name: storage
+          mountPath: /downloads
+          subPath: media/downloads
+  volumes:
+    - name: storage
+      type: pvc
+      typeName: storage-pvc
+
+infisicalSecrets:
+  - name: infisical-certificates
+    serviceTokenSecretName: service-token
+    secretsPath: /certificates
+    secretName: tls-secret
+    secretType: kubernetes.io/tls
+
+ingress:
+  name: ingress
+  hosts:
+    - host: qbit.mariusne.com
+      paths:
+        - path: "/"
+          pathType: Prefix
+          serviceName: service
+          servicePort: http
+  tls:
+    secretName: tls-secret
+
+pvcs:
+  - name: storage-pvc
+    storageClassName: local-path-persistent
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+    volumeMode: Filesystem
+
+services:
+  - name: service
+    type: ClusterIP
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+      - name: svc-tcp
+        protocol: TCP
+        port: 6881
+        targetPort: tcp
+      - name: svc-udp
+        protocol: UDP
+        port: 6881
+        targetPort: udp
