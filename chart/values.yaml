@@ -8,7 +8,7 @@ deployment:
     - name: qbit
       image:
         repository: lscr.io/linuxserver/qbittorrent
-        tag: latest
+        tag: libtorrentv1
       ports:
         - name: http
           containerPort: 80
