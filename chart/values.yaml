@@ -44,17 +44,10 @@ deployment:
       type: pvc
       typeName: storage-pvc
 
-infisicalSecrets:
-  - name: infisical-certificates
-    serviceTokenSecretName: service-token
-    secretsPath: /certificates
-    secretName: tls-secret
-    secretType: kubernetes.io/tls
-
 ingress:
   name: ingress
   hosts:
-    - host: qbit.mariusne.com
+    - host: qbit.@vault(secrets/data/domain main | DOMAIN_NAME)
       paths:
         - path: "/"
           pathType: Prefix
@@ -86,3 +79,11 @@ services:
         protocol: UDP
         port: 6881
         targetPort: udp
+
+vaultSecrets:
+  - name: tls-secret
+    type: kubernetes.io/tls
+    path: secrets/certificates
+    templates:
+      tls.crt: "{% .Secrets.tls_crt %}"
+      tls.key: "{% .Secrets.tls_key %}"
